@@ -344,5 +344,55 @@ phase_space_type2 <- ggplot(data = out_df)+
 # check plots
 predator_prey_type2/phase_space_type2
 
+# even for small values of A, with efficient predators, the population will
+# collapse, because a small decrease in predation will limit the birth rate
+
+# combine both the logistic growth and the functional response in your model
+x <- seq(0,30,0.1)
+A <- 0.1
+y <- x/(1+A*x)
+ggplot()+
+  geom_line(mapping=aes(x=x,y=y),color="blue") +
+  geom_hline(yintercept=0,color="darkgrey") +
+  geom_vline(xintercept=0,color="darkgrey") +
+  labs(x = "Prey population", y = "Prey consumed") +
+  theme_bw()
+
+
+lotka_volterra2 <- function(t,state,parameters){
+  with(as.list(c(state, parameters)),{
+    # rate of change
+    dX <- a*X*(1-X/K) - b*X*Y/(1+A*X)
+    dY <- c*X*Y/(1+A*X) - d*Y
+    
+    # return the rate of change
+    list(c(dX, dY))
+  }) # end with(as.list ...
+}
+
+parameters <- c(a=0.1, b=0.02, c=0.02, d=0.4, K=30, A=0.01)
+state <- c(X=10, Y=10)
+times <- seq(0,500,by=0.01)
+out <- ode(y=state, times = times, func = lotka_volterra2, parms = parameters)
+out_df <- data.frame(out)
+
+
+ggplot(data = out_df)+
+  geom_line(mapping=aes(x=time,y=X),color="lightblue") +
+  geom_line(mapping=aes(x=time,y=Y),color="blue") +
+  geom_hline(yintercept=0,color="darkgrey") +
+  geom_vline(xintercept=0,color="darkgrey") +
+  labs(x = "Time", y = "P") +
+  theme_bw()
+
+
+ggplot(data = out_df)+
+  geom_path(mapping=aes(x=X,y=Y),color="blue") +
+  xlim(0,70) +
+  ylim(0,40) +
+  geom_hline(yintercept=0,color="darkgrey") +
+  geom_vline(xintercept=0,color="darkgrey") +
+  labs(x = "Prey", y = "Predator") +
+  theme_bw()
 
 
