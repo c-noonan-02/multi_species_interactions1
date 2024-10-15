@@ -27,7 +27,9 @@ library(deSolve)
 # we can modify this include two different differential equations representing
 # a predator-prey Lotka-Volterra model (both in the same function)
 
-lotka_volterra <- function(times,state,parameters){ #logistic growth function, that takes a set of parameter values, initial conditions and a time sequence
+# dx/dt = ax - bxy
+# dy/dt = cxy - dy
+lotka_volterra_exponential <- function(times,state,parameters){ #logistic growth function, that takes a set of parameter values, initial conditions and a time sequence
     with(as.list(c(state, parameters)), { #"with" is a function that allows us to use the variable names directly - it looks for r, K and P in state and parameters
       
       dX <- a*X - b*X*Y # this is our equation for the prey dynamics
@@ -47,7 +49,7 @@ parameters <- c(a=0.1, b=0.02, c=0.02, d=0.4)
 times <- seq(0,500,by=0.01)
 
 # call the function
-out <- ode(y=state, times = times, func = lotka_volterra, parms = parameters)
+out <- ode(y=state, times = times, func = lotka_volterra_exponential, parms = parameters)
 out_df <- data.frame(out)
 
 # we can then plot the output
@@ -82,7 +84,7 @@ state <- c(X=50, Y=5) # more prey, less predators
 # equation parameters
 parameters <- c(a=0.1, b=0.02, c=0.02, d=0.4) # same parameters for now
 # re-call the function
-out2 <- ode(y=state, times = times, func = lotka_volterra, parms = parameters)
+out2 <- ode(y=state, times = times, func = lotka_volterra_exponential, parms = parameters)
 out_df2 <- data.frame(out2)
 predator_prey_plot2 <- ggplot(data = out_df2)+
   geom_line(mapping=aes(x=time,y=X),color="lightblue") +
@@ -111,7 +113,7 @@ state <- c(X=10, Y=10) # same starting numbers
 # equation parameters
 parameters <- c(a=0.5, b=0.02, c=0.02, d=0.4) # increase hunting efficiency
 # re-call the function
-out3 <- ode(y=state, times = times, func = lotka_volterra, parms = parameters)
+out3 <- ode(y=state, times = times, func = lotka_volterra_exponential, parms = parameters)
 out_df3 <- data.frame(out3)
 predator_prey_plot3 <- ggplot(data = out_df3)+
   geom_line(mapping=aes(x=time,y=X),color="lightblue") +
@@ -137,7 +139,7 @@ state <- c(X=5, Y=50) # inverse of dfirst edit - more predators than prey
 # equation parameters
 parameters <- c(a=0.1, b=0.02, c=0.02, d=0.4) # increase hunting efficiency
 # re-call the function
-out4 <- ode(y=state, times = times, func = lotka_volterra, parms = parameters)
+out4 <- ode(y=state, times = times, func = lotka_volterra_exponential, parms = parameters)
 out_df4 <- data.frame(out4)
 predator_prey_plot4 <- ggplot(data = out_df4)+
   geom_line(mapping=aes(x=time,y=X),color="lightblue") +
@@ -159,5 +161,57 @@ phase_space_plot4 <- ggplot(data = out_df4)+
 predator_prey_plot/predator_prey_plot4 # population crashes? 
 phase_space_plot/phase_space_plot4 # increases the number of possible states of the system
 # bottom cuts off - because crashes are a potential?
+
+
+# STEP TWO: PREY GROWTH RATE - EXPONENTIAL VS LOGISTIC
+
+# lets change the equation to include logistic growth instead
+# dx/dt = ax(1- x/K)
+
+lotka_volterra_logistic <- function(times,state,parameters){ #logistic growth function, that takes a set of parameter values, initial conditions and a time sequence
+  with(as.list(c(state, parameters)), { #"with" is a function that allows us to use the variable names directly - it looks for r, K and P in state and parameters
+    
+    dX <- a*X*(1-X/K) - b*X*Y # this is our equation for the prey dynamics, with logistic growth instead
+    dY <- c*X*Y - d*Y # this is the equation for predator dynamics
+    
+    # return the rate of change
+    list(c(dX, dY))
+  }) # end with(as.list ...
+}
+
+# initial population values
+state <- c(X=10, Y=10)
+# equation parameters
+parameters <- c(a=0.1, b=0.02, c=0.02, d=0.4, K=30)
+#sequence of time steps
+times <- seq(0,500,by=0.01)
+
+# call the function
+out <- ode(y=state, times = times, func = lotka_volterra_logistic, parms = parameters)
+out_df <- data.frame(out)
+
+
+# we can then plot the output
+predator_prey_logistic <- ggplot(data = out_df)+
+  geom_line(mapping=aes(x=time,y=X),color="lightblue") +
+  geom_line(mapping=aes(x=time,y=Y),color="blue") +
+  geom_hline(yintercept=0,color="darkgrey") +
+  geom_vline(xintercept=0,color="darkgrey") +
+  labs(x = "Time", y = "P") +
+  ggtitle("Predator-Prey Cycles - logistic growth") +
+  theme_bw()
+
+phase_space_logistic <- ggplot(data = out_df)+
+  geom_path(mapping=aes(x=X,y=Y),color="blue") +
+  xlim(0,70) +
+  ylim(0,40) +
+  geom_hline(yintercept=0,color="darkgrey") +
+  geom_vline(xintercept=0,color="darkgrey") +
+  labs(x = "Prey", y = "Predator") +
+  ggtitle("Phase Space Plot - logistic growth") +
+  theme_bw()
+
+predator_prey_plot/predator_prey_logistic # far less oscillations, just oscillate until settled around k
+phase_space_plot/phase_space_logistic # swirly fucker?? Ask about meaning? Chaotic effects?
 
 
